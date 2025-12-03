@@ -172,11 +172,11 @@ TypeScript em toda a aplicação:
 // ✅ Tipos para loaders e actions
 type LoaderData = {
   user: User;
-  creativos: Creative[];
+  creatives: Creative[];
 };
 
 export async function loader(): Promise<TypedResponse<LoaderData>> {
-  return json({ user, creativos });
+  return json({ user, creatives });
 }
 ```
 
@@ -186,12 +186,12 @@ Uso de loaders para carregamento paralelo de dados:
 ```typescript
 // ✅ Dados carregados em paralelo
 export async function loader() {
-  const [user, creativos, stats] = await Promise.all([
+  const [user, creatives, stats] = await Promise.all([
     getUser(),
-    getCreativos(),
+    getcreatives(),
     getStats(),
   ]);
-  return json({ user, creativos, stats });
+  return json({ user, creatives, stats });
 }
 ```
 
@@ -332,7 +332,7 @@ interface MetaCreative {
 3. ✅ Sistema de autenticação mock
 4. ✅ Integração com temas DaisyUI
 5. 🔄 Integração com WorkOS (futuro)
-6. 🔄 Conexão com API real de Creativos (futuro)
+6. 🔄 Conexão com API real de creatives (futuro)
 
 ---
 
@@ -343,3 +343,104 @@ interface MetaCreative {
 - [WorkOS Documentation](https://workos.com/docs)
 - [SOLID Principles](https://en.wikipedia.org/wiki/SOLID)
 - [Remix Best Practices](https://remix.run/docs/en/main/guides/best-practices)
+
+---
+
+## 🗺️ Routing: fs-routes vs app/routes.ts e abordagem híbrida
+
+### Visão Geral
+
+- `fs-routes` (file-based routing) descobre rotas automaticamente a partir de `app/routes/*` seguindo convenções de nomes.
+- `app/routes.ts` permite declarar rotas manualmente com controle explícito de ordem, agrupamento e exceções.
+- A abordagem híbrida combina os dois: usa auto-descoberta para produtividade e declara explicitamente rotas críticas quando necessário.
+
+### Quando usar `fs-routes`
+
+- Projetos que priorizam DX (menos boilerplate, onboarding rápido)
+- Estrutura de rotas que segue convenções naturais (layouts pathless com `_`, rotas índice com `_index`, rotas dinâmicas com `$id`)
+- Evitar divergência entre arquivo e configuração (a rota “existe” ao criar o arquivo)
+
+Exemplo de arquivos:
+
+```
+app/
+  routes/
+    _public.tsx            // layout pathless (não adiciona segmento na URL)
+    _public._index.tsx     // index do layout público (renderiza em "/")
+    _private.tsx           // layout privado
+    _private.home.tsx      // index do layout privado ("/home")
+    _private.perfil.tsx    // rota privada ("/home/perfil")
+    api.auth.login.ts      // BFF login
+    api.auth.logout.ts     // BFF logout
+```
+
+Configuração (`app/routes.ts`):
+
+```ts
+import { type RouteConfig } from "@react-router/dev/routes";
+import { flatRoutes } from "@react-router/fs-routes";
+
+export default (await flatRoutes()) satisfies RouteConfig;
+```
+
+### Quando usar `app/routes.ts`
+
+- Controle fino da ordem de matching (rotas estáticas vs dinâmicas)
+- Ignorar ou incluir arquivos fora de `app/routes`
+- Agrupar rotas de maneira diferente do filesystem
+- Ambientes enterprise que pedem configuração explícita e auditável
+
+Exemplo manual:
+
+```ts
+import { type RouteConfig, route, index } from "@react-router/dev/routes";
+
+export default [
+  route("", "./routes/_public.tsx", [
+    index("./routes/_public._index.tsx"),
+  ]),
+  route("home", "./routes/_private.tsx", [
+    index("./routes/_private.home.tsx"),
+    route("perfil", "./routes/_private.perfil.tsx"),
+  ]),
+  route("api/auth/login", "./routes/api.auth.login.ts"),
+  route("api/auth/logout", "./routes/api.auth.logout.ts"),
+  route("api/creatives", "./routes/api.creatives.ts"),
+  route("api/theme", "./routes/api.theme.ts"),
+] satisfies RouteConfig;
+```
+
+### Abordagem Híbrida
+
+- Combine auto-descoberta com rotas manuais para o melhor dos dois mundos.
+- Declare rotas críticas explicitamente (ordem, exceções) e deixe o resto para o `flatRoutes()`.
+
+Exemplo híbrido:
+
+```ts
+import { type RouteConfig, route, index } from "@react-router/dev/routes";
+import { flatRoutes } from "@react-router/fs-routes";
+
+export default [
+  // Rotas críticas declaradas
+  route("", "./routes/_public.tsx", [
+    index("./routes/_public._index.tsx"),
+  ]),
+
+  // Demais rotas via auto-descoberta
+  ...(await flatRoutes()),
+] satisfies RouteConfig;
+```
+
+### Boas Práticas
+
+- Mantenha `loader`/`action` finos e delegue regras de negócio para `services/*.server.ts`
+- Utilize layouts pathless (`_segment.tsx`) para separar áreas pública/privada
+- Centralize utilitários de `Response` e cookies em `utils/*`
+- Tipos compartilhados em `types/*`; evite duplicar modelos de domínio
+- Para APIs, trate `app/routes/api.*.ts` como BFF: validação, autorização e agregação
+
+### Decisão de Arquitetura
+
+- Padrão recomendado: `fs-routes` por padrão + híbrido quando precisar de controle específico.
+- Migre para manual completo se o projeto exigir governança rígida de URLs e ordem.
