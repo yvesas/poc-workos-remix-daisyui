@@ -1,9 +1,17 @@
-import { useLoaderData, Form, useActionData, useNavigation, type LoaderFunctionArgs, type ActionFunctionArgs } from 'react-router';
-import { json } from '~/utils/responses';
-import { requireUser } from '~/utils/session.server';
-import type { User } from '~/types';
-import { useState, useEffect } from 'react';
-import { useProfileStore } from '~/stores/profileStore';
+import {
+  useLoaderData,
+  Form,
+  useActionData,
+  useNavigation,
+  type LoaderFunctionArgs,
+  type ActionFunctionArgs,
+} from "react-router";
+import { z } from "zod";
+import { json } from "~/utils/responses";
+import { requireUser } from "~/utils/session.server";
+import type { User } from "~/types";
+import { useState, useEffect } from "react";
+import { useProfileStore } from "~/stores/profileStore";
 
 type LoaderData = {
   user: User;
@@ -18,76 +26,105 @@ type ActionData = {
 /**
  * Profile page - editable user profile
  * Uses Zustand for state management with optimistic UI updates
- * 
+ *
  * Benefits of Zustand here:
  * - Optimistic UI: Shows changes immediately before server confirmation
  * - Unsaved changes indicator
  * - Persistent state across navigation
  * - No prop drilling
  */
-export async function loader({ request }: LoaderFunctionArgs): Promise<Response> {
+export async function loader({
+  request,
+}: LoaderFunctionArgs): Promise<Response> {
   const user = await requireUser(request);
   return json<LoaderData>({ user });
 }
 
-export async function action({ request }: ActionFunctionArgs): Promise<Response> {
+// Zod Schema for profile validation
+const profileSchema = z.object({
+  firstName: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  lastName: z.string().min(2, "Sobrenome deve ter pelo menos 2 caracteres"),
+  email: z.string().email("Email inválido"),
+  phone: z
+    .string()
+    .min(10, "Telefone deve ter pelo menos 10 dígitos")
+    .optional()
+    .or(z.literal("")),
+});
+
+export async function action({
+  request,
+}: ActionFunctionArgs): Promise<Response> {
   const formData = await request.formData();
-  const intent = formData.get('intent');
+  const intent = formData.get("intent");
 
-  if (intent === 'updateProfile') {
-    const firstName = formData.get('firstName');
-    const lastName = formData.get('lastName');
-    const email = formData.get('email');
+  if (intent === "updateProfile") {
+    const data = {
+      firstName: formData.get("firstName"),
+      lastName: formData.get("lastName"),
+      email: formData.get("email"),
+      phone: formData.get("phone"),
+    };
 
-    // Validation
-    if (!firstName || !lastName || !email) {
+    // Zod Validation
+    const result = profileSchema.safeParse(data);
+
+    if (!result.success) {
+      // Get the first error message
+      const firstError = result.error.issues[0]?.message || "Erro de validação";
       return json<ActionData>(
-        { error: 'Todos os campos são obrigatórios', field: 'profile' },
+        { error: firstError, field: "profile" },
         { status: 400 }
       );
     }
 
     // In production, update user in database
     // For now, just return success
-    return json<ActionData>({ success: true, field: 'profile' });
+    return json<ActionData>({ success: true, field: "profile" });
   }
 
-  if (intent === 'changePassword') {
-    const currentPassword = formData.get('currentPassword');
-    const newPassword = formData.get('newPassword');
-    const confirmPassword = formData.get('confirmPassword');
+  if (intent === "changePassword") {
+    const currentPassword = formData.get("currentPassword");
+    const newPassword = formData.get("newPassword");
+    const confirmPassword = formData.get("confirmPassword");
 
     // Validation
     if (!currentPassword || !newPassword || !confirmPassword) {
       return json<ActionData>(
-        { error: 'Todos os campos são obrigatórios', field: 'password' },
+        { error: "Todos os campos são obrigatórios", field: "password" },
         { status: 400 }
       );
     }
 
     if (newPassword !== confirmPassword) {
       return json<ActionData>(
-        { error: 'As senhas não coincidem', field: 'password' },
+        { error: "As senhas não coincidem", field: "password" },
         { status: 400 }
       );
     }
 
     // In production, validate current password and update
     // For now, just return success
-    return json<ActionData>({ success: true, field: 'password' });
+    return json<ActionData>({ success: true, field: "password" });
   }
 
-  return json<ActionData>({ error: 'Ação inválida' }, { status: 400 });
+  return json<ActionData>({ error: "Ação inválida" }, { status: 400 });
 }
 
 export default function Perfil() {
   const { user: serverUser } = useLoaderData<LoaderData>();
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
-  
+
   // Zustand store for optimistic UI
-  const { user: storeUser, setUser, updateField, isDirty, setSaving } = useProfileStore();
-  
+  const {
+    user: storeUser,
+    setUser,
+    updateField,
+    isDirty,
+    setSaving,
+  } = useProfileStore();
+
   // Initialize store with server data
   useEffect(() => {
     setUser(serverUser);
@@ -95,14 +132,14 @@ export default function Perfil() {
 
   // Use store user for optimistic UI, fallback to server user
   const user = storeUser || serverUser;
-  
+
   const [previewUrl, setPreviewUrl] = useState(user.avatarUrl);
 
-  const isSubmitting = navigation.state === 'submitting';
+  const isSubmitting = navigation.state === "submitting";
   const isProfileSubmitting =
-    isSubmitting && navigation.formData?.get('intent') === 'updateProfile';
+    isSubmitting && navigation.formData?.get("intent") === "updateProfile";
   const isPasswordSubmitting =
-    isSubmitting && navigation.formData?.get('intent') === 'changePassword';
+    isSubmitting && navigation.formData?.get("intent") === "changePassword";
 
   // Update saving state
   useEffect(() => {
@@ -111,7 +148,7 @@ export default function Perfil() {
 
   // Reset dirty flag on successful save
   useEffect(() => {
-    if (actionData?.success && actionData?.field === 'profile') {
+    if (actionData?.success && actionData?.field === "profile") {
       setUser(user); // This resets isDirty to false
     }
   }, [actionData, user, setUser]);
@@ -132,7 +169,9 @@ export default function Perfil() {
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-bold">Perfil</h1>
-        <p className="text-base-content/60 mt-1">Gerencie suas informações pessoais</p>
+        <p className="text-base-content/60 mt-1">
+          Gerencie suas informações pessoais
+        </p>
       </div>
 
       {/* Unsaved Changes Indicator - Powered by Zustand */}
@@ -160,7 +199,11 @@ export default function Perfil() {
         <div className="card-body">
           <h2 className="card-title">Informações Pessoais</h2>
 
-          <Form method="post" encType="multipart/form-data" className="space-y-6">
+          <Form
+            method="post"
+            encType="multipart/form-data"
+            className="space-y-6"
+          >
             <input type="hidden" name="intent" value="updateProfile" />
 
             {/* Avatar Upload */}
@@ -208,7 +251,7 @@ export default function Perfil() {
                   type="text"
                   name="firstName"
                   value={user.firstName}
-                  onChange={(e) => updateField('firstName', e.target.value)}
+                  onChange={(e) => updateField("firstName", e.target.value)}
                   className="input input-bordered"
                   required
                 />
@@ -223,7 +266,7 @@ export default function Perfil() {
                   type="text"
                   name="lastName"
                   value={user.lastName}
-                  onChange={(e) => updateField('lastName', e.target.value)}
+                  onChange={(e) => updateField("lastName", e.target.value)}
                   className="input input-bordered"
                   required
                 />
@@ -239,20 +282,35 @@ export default function Perfil() {
                 type="email"
                 name="email"
                 value={user.email}
-                onChange={(e) => updateField('email', e.target.value)}
+                onChange={(e) => updateField("email", e.target.value)}
                 className="input input-bordered"
                 required
               />
             </div>
 
+            {/* Phone - New field with Zod validation example */}
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-semibold">Telefone</span>
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                value={user.phone || ""}
+                onChange={(e) => updateField("phone", e.target.value)}
+                className="input input-bordered"
+                placeholder="(00) 00000-0000"
+              />
+            </div>
+
             {/* Success/Error Messages */}
-            {actionData?.field === 'profile' && (
+            {actionData?.field === "profile" && (
               <div
-                className={`alert ${actionData.success ? 'alert-success' : 'alert-error'}`}
+                className={`alert ${actionData.success ? "alert-success" : "alert-error"}`}
               >
                 <span>
                   {actionData.success
-                    ? 'Perfil atualizado com sucesso!'
+                    ? "Perfil atualizado com sucesso!"
                     : actionData.error}
                 </span>
               </div>
@@ -270,7 +328,7 @@ export default function Perfil() {
                     Salvando...
                   </>
                 ) : (
-                  'Salvar Alterações'
+                  "Salvar Alterações"
                 )}
               </button>
             </div>
@@ -315,7 +373,9 @@ export default function Perfil() {
             {/* Confirm Password */}
             <div className="form-control">
               <label className="label">
-                <span className="label-text font-semibold">Confirmar Nova Senha</span>
+                <span className="label-text font-semibold">
+                  Confirmar Nova Senha
+                </span>
               </label>
               <input
                 type="password"
@@ -326,12 +386,14 @@ export default function Perfil() {
             </div>
 
             {/* Success/Error Messages */}
-            {actionData?.field === 'password' && (
+            {actionData?.field === "password" && (
               <div
-                className={`alert ${actionData.success ? 'alert-success' : 'alert-error'}`}
+                className={`alert ${actionData.success ? "alert-success" : "alert-error"}`}
               >
                 <span>
-                  {actionData.success ? 'Senha alterada com sucesso!' : actionData.error}
+                  {actionData.success
+                    ? "Senha alterada com sucesso!"
+                    : actionData.error}
                 </span>
               </div>
             )}
@@ -348,7 +410,7 @@ export default function Perfil() {
                     Alterando...
                   </>
                 ) : (
-                  'Alterar Senha'
+                  "Alterar Senha"
                 )}
               </button>
             </div>

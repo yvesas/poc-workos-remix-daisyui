@@ -35,6 +35,7 @@ export async function getUserFromSession(request: Request): Promise<User | null>
     email: 'user@example.com',
     firstName: 'John',
     lastName: 'Doe',
+    phone: '(11) 99999-9999',
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John',
   };
 }

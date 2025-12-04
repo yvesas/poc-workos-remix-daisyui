@@ -109,3 +109,61 @@ Com a lógica em services, você pode chamá-la diretamente no loader da página
 | Formatação JSON para Front | **Rota (BFF)**                                   |
 
 Esta estrutura garante que seu projeto escale de forma organizada, mantendo a flexibilidade do BFF com a robustez de uma arquitetura em camadas.
+
+---
+
+## 🛡️ Validação com Zod
+
+Embora a camada de Serviço retorne dados tipados (TypeScript) eliminando a necessidade de validação de *saída* entre camadas internas (SSR -> Service), a validação de **entrada** (Input Validation) continua crucial na camada BFF/Rota.
+
+Quando o usuário envia um formulário, os dados são `unknown` ou `FormData`. O **Zod** é a ferramenta perfeita para validar e tipar esses dados antes de passá-los para os Serviços.
+
+### Exemplo Prático: Formulário de Perfil
+
+Abaixo, um exemplo de como utilizamos Zod na rota de perfil (`app/routes/_private.perfil.tsx`) para validar dados recebidos do formulário, incluindo um campo opcional de telefone.
+
+```typescript
+import { z } from 'zod';
+// ... imports
+
+// 1. Definição do Schema
+const profileSchema = z.object({
+  firstName: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+  lastName: z.string().min(2, 'Sobrenome deve ter pelo menos 2 caracteres'),
+  email: z.string().email('Email inválido'),
+  // Campo opcional: aceita string vazia ou valida formato se preenchido
+  phone: z.string().min(10, 'Telefone deve ter pelo menos 10 dígitos').optional().or(z.literal('')),
+});
+
+export async function action({ request }: ActionFunctionArgs) {
+  const formData = await request.formData();
+  
+  // 2. Coleta de dados
+  const data = {
+    firstName: formData.get('firstName'),
+    lastName: formData.get('lastName'),
+    email: formData.get('email'),
+    phone: formData.get('phone'),
+  };
+
+  // 3. Validação com Zod
+  const result = profileSchema.safeParse(data);
+
+  if (!result.success) {
+    // Retorna erro formatado para a UI
+    const firstError = result.error.issues[0]?.message || 'Erro de validação';
+    return json({ error: firstError, field: 'profile' }, { status: 400 });
+  }
+
+  // 4. Dados validados e tipados prontos para o Service
+  // await userService.updateProfile(user.id, result.data);
+  
+  return json({ success: true, field: 'profile' });
+}
+```
+
+### Onde usar Zod?
+- **SIM:** Em `actions` para validar `FormData`.
+- **SIM:** Em rotas de API (`api.*.ts`) para validar JSON bodies.
+- **NÃO:** Não é estritamente necessário validar o retorno de `userService.list()` dentro de um `loader`, pois confiamos na tipagem do TypeScript do nosso próprio código (camada interna).
+
