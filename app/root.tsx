@@ -32,8 +32,10 @@ export async function loader({ request }: Route.LoaderArgs): Promise<Response> {
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const data = useLoaderData<{ theme: string }>();
+  const theme = data?.theme || 'light';
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang="pt-BR" suppressHydrationWarning data-theme={theme}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -50,14 +52,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const data = useLoaderData<{ theme: string }>();
-  const theme = data?.theme || 'light';
-
-  return (
-    <div data-theme={theme} suppressHydrationWarning>
-      <Outlet />
-    </div>
-  );
+  return <Outlet />;
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

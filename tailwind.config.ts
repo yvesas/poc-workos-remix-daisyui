@@ -14,7 +14,6 @@ export default {
     utils: true,
     prefix: '',
     logs: true,
-    themeRoot: ':root',
+    themeRoot: 'html',
   },
 } as Config;
-

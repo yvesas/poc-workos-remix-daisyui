@@ -1,7 +1,16 @@
-import { Form, useActionData, useNavigation, type ActionFunctionArgs, type LoaderFunctionArgs } from 'react-router';
-import { json, redirect } from '~/utils/responses';
-import { Logo } from '~/components/Logo';
-import { getUserFromSession } from '~/services/authService.server';
+import {
+  Form,
+  useActionData,
+  useNavigation,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+} from "react-router";
+import { json, redirect } from "~/utils/responses";
+import { Logo } from "~/components/Logo";
+import {
+  getUserFromSession,
+  createUserSession,
+} from "~/services/authService.server";
 
 type ActionData = {
   error?: string;
@@ -13,37 +22,37 @@ type ActionData = {
  */
 
 // Redirect to home if already logged in
-export async function loader({ request }: LoaderFunctionArgs): Promise<Response | null> {
+export async function loader({
+  request,
+}: LoaderFunctionArgs): Promise<Response | null> {
   const user = await getUserFromSession(request);
   if (user) {
-    return redirect('/home');
+    return redirect("/home");
   }
   return null;
 }
 
-export async function action({ request }: ActionFunctionArgs): Promise<Response> {
-  // Form will be submitted to /api/auth/login via action attribute
+export async function action({
+  request,
+}: ActionFunctionArgs): Promise<Response> {
   const formData = await request.formData();
-  const email = formData.get('email');
-  const password = formData.get('password');
+  const email = formData.get("email");
+  const password = formData.get("password");
 
   if (!email || !password) {
-    return json<ActionData>({ error: 'Email e senha são obrigatórios' }, { status: 400 });
+    return json<ActionData>(
+      { error: "Email e senha são obrigatórios" },
+      { status: 400 }
+    );
   }
-
-  // Forward to login API
-  const loginRequest = new Request(new URL('/api/auth/login', request.url), {
-    method: 'POST',
-    body: formData,
-  });
-
-  return fetch(loginRequest);
+  // Mock login direto: cria sessão e redireciona para /home
+  return createUserSession("user-123", "/home");
 }
 
 export default function LandingPage() {
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
-  const isSubmitting = navigation.state === 'submitting';
+  const isSubmitting = navigation.state === "submitting";
 
   return (
     <div className="min-h-screen">
@@ -59,15 +68,18 @@ export default function LandingPage() {
               Proof of Concept: React Router v7 + DaisyUI + WorkOS
             </p>
             <p className="text-lg mb-12 text-base-content/60 max-w-2xl mx-auto">
-              Uma aplicação moderna demonstrando as capacidades do React Router v7 em modo
-              framework, a flexibilidade do DaisyUI com múltiplos temas, e preparada para
-              integração com WorkOS para autenticação empresarial.
+              Uma aplicação moderna demonstrando as capacidades do React Router
+              v7 em modo framework, a flexibilidade do DaisyUI com múltiplos
+              temas, e preparada para integração com WorkOS para autenticação
+              empresarial.
             </p>
 
             {/* Login Form */}
             <div className="card bg-base-100 shadow-2xl max-w-md mx-auto">
               <div className="card-body">
-                <h2 className="card-title justify-center mb-4">Acesso Rápido</h2>
+                <h2 className="card-title justify-center mb-4">
+                  Acesso Rápido
+                </h2>
                 <Form method="post" className="space-y-4">
                   <div className="form-control">
                     <input
@@ -103,7 +115,7 @@ export default function LandingPage() {
                         Entrando...
                       </>
                     ) : (
-                      'Entrar'
+                      "Entrar"
                     )}
                   </button>
                 </Form>
@@ -119,7 +131,9 @@ export default function LandingPage() {
       {/* Features Section */}
       <div className="py-20 bg-base-200">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-16">Tecnologias da POC</h2>
+          <h2 className="text-4xl font-bold text-center mb-16">
+            Tecnologias da POC
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* React Router v7 */}
             <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
@@ -127,8 +141,9 @@ export default function LandingPage() {
                 <div className="text-4xl mb-4">⚡</div>
                 <h3 className="card-title">React Router v7</h3>
                 <p className="text-base-content/70">
-                  Framework mode com SSR, loaders, actions, e nested routes. A evolução do
-                  Remix com melhorias de performance e developer experience.
+                  Framework mode com SSR, loaders, actions, e nested routes. A
+                  evolução do Remix com melhorias de performance e developer
+                  experience.
                 </p>
                 <div className="card-actions justify-end mt-4">
                   <div className="badge badge-primary">Framework Mode</div>
@@ -143,8 +158,9 @@ export default function LandingPage() {
                 <div className="text-4xl mb-4">🎨</div>
                 <h3 className="card-title">DaisyUI</h3>
                 <p className="text-base-content/70">
-                  Biblioteca de componentes para Tailwind CSS com 7 temas pré-configurados:
-                  light, dark, cupcake, business, night, dracula e winter.
+                  Biblioteca de componentes para Tailwind CSS com 7 temas
+                  pré-configurados: light, dark, cupcake, business, night,
+                  dracula e winter.
                 </p>
                 <div className="card-actions justify-end mt-4">
                   <div className="badge badge-secondary">7 Temas</div>
@@ -159,8 +175,9 @@ export default function LandingPage() {
                 <div className="text-4xl mb-4">🔐</div>
                 <h3 className="card-title">WorkOS</h3>
                 <p className="text-base-content/70">
-                  Plataforma de autenticação empresarial com SSO, SAML, e gerenciamento de
-                  usuários. Integração planejada para autenticação robusta.
+                  Plataforma de autenticação empresarial com SSO, SAML, e
+                  gerenciamento de usuários. Integração planejada para
+                  autenticação robusta.
                 </p>
                 <div className="card-actions justify-end mt-4">
                   <div className="badge badge-accent">Em Breve</div>
@@ -175,14 +192,17 @@ export default function LandingPage() {
       {/* Architecture Section */}
       <div className="py-20">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-16">Arquitetura BFF</h2>
+          <h2 className="text-4xl font-bold text-center mb-16">
+            Arquitetura BFF
+          </h2>
           <div className="max-w-4xl mx-auto">
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body">
                 <p className="text-lg text-base-content/80 mb-6">
-                  Esta POC implementa o padrão <strong>Backend for Frontend (BFF)</strong>,
-                  onde as rotas de API do React Router v7 funcionam como uma camada
-                  intermediária entre o frontend e os serviços backend.
+                  Esta POC implementa o padrão{" "}
+                  <strong>Backend for Frontend (BFF)</strong>, onde as rotas de
+                  API do React Router v7 funcionam como uma camada intermediária
+                  entre o frontend e os serviços backend.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
