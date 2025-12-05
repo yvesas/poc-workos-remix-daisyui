@@ -127,7 +127,7 @@ export default function LandingPage() {
                 <div className="divider">ou</div>
                 <a
                   href={workos.data?.signInUrl || "#"}
-                  className="btn btn-secondary w-full"
+                  className={`btn btn-secondary w-full ${!workos.data?.signInUrl ? 'btn-disabled' : ''}`}
                   aria-disabled={!workos.data?.signInUrl}
                   onClick={(e) => {
                     if (!workos.data?.signInUrl) e.preventDefault();
@@ -135,6 +135,14 @@ export default function LandingPage() {
                 >
                   Entrar com WorkOS
                 </a>
+                {!workos.data?.signInUrl && (
+                  <div className="alert alert-warning mt-3">
+                    <span>
+                      WorkOS não configurado. Defina WORKOS_CLIENT_ID, WORKOS_API_KEY,
+                      WORKOS_REDIRECT_URI e WORKOS_COOKIE_PASSWORD.
+                    </span>
+                  </div>
+                )}
                 <p className="text-sm text-base-content/60 text-center mt-4">
                   Demo: Use qualquer email e senha
                 </p>

@@ -7,11 +7,11 @@ import {
   type ActionFunctionArgs,
 } from "react-router";
 import { z } from "zod";
-import { json } from "~/utils/responses";
-import { requireUser } from "~/utils/session.server";
+import { json, redirect } from "~/utils/responses";
 import type { User } from "~/types";
 import { useState, useEffect } from "react";
 import { useProfileStore } from "~/stores/profileStore";
+import { authkitLoader } from "@workos-inc/authkit-remix";
 
 type LoaderData = {
   user: User;
@@ -33,10 +33,14 @@ type ActionData = {
  * - Persistent state across navigation
  * - No prop drilling
  */
-export async function loader({
-  request,
-}: LoaderFunctionArgs): Promise<Response> {
-  const user = await requireUser(request);
+export async function loader(args: LoaderFunctionArgs): Promise<Response> {
+  const data = (await authkitLoader(args as any)) as any;
+  const user = data?.user as User | null;
+  const signInUrl = data?.signInUrl as string | undefined;
+  if (!user) {
+    if (signInUrl) return redirect(signInUrl);
+    return redirect("/");
+  }
   return json<LoaderData>({ user });
 }
 

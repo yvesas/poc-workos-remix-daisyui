@@ -10,31 +10,31 @@ Dependências
 Variáveis de ambiente
 - `WORKOS_CLIENT_ID=client_...`
 - `WORKOS_API_KEY=sk_...`
-- `WORKOS_REDIRECT_URI=http://localhost:3000/callback`
+- `WORKOS_REDIRECT_URI=http://localhost:5173/workos/callback`
 - `WORKOS_COOKIE_PASSWORD=<>=32 chars, forte>`
 
-Arquitetura (fase 1)
+Arquitetura (fase 1) — concluída
 - Rotas:
-  - `GET /callback` → `authLoader({ returnPathname: '/home' })`
-  - `GET /auth/login` → redireciona para URL de login (fase 2) ou usar `signInUrl` do loader
+  - `GET /workos/callback` → `authLoader({ returnPathname: '/home' })` (rota de callback oficial)
+  - `GET /auth/login` → redireciona para `signInUrl` (endpoint de login)
 - Loader público:
-  - Em `_public._index.tsx`, usar `authkitLoader` para obter `{ user, signInUrl }` e renderizar botão “Entrar com WorkOS”.
-- Sessão privada (temporária):
-  - Manter `requireUser` atual (mock) até fase 2; rotas privadas seguem funcionando.
+  - Em `_public._index.tsx`, usar `authkitLoader` para obter `{ signInUrl }`; botão “Entrar com WorkOS” com fallback quando indisponível.
+- Rotas duplicadas de callback removidas; apenas `/workos/callback` permanece ativa.
 
-Arquitetura (fase 2)
-- Substituir `requireUser` por leitura da sessão do AuthKit.
-- Proteger rotas privadas com sessão do WorkOS.
-- Implementar logout (limpar cookie de sessão e redirecionar). 
+Arquitetura (fase 2) — concluída
+- Privado: `_private.tsx` e `_private.perfil.tsx` usam `authkitLoader` para ler sessão; quando `user` ausente, redirecionam para `signInUrl` ou `/`.
+- Logout: `api.auth.logout.ts` chama `signOut(request)`; fluxo validado sem `returnTo`.
+- Tema: preservado via cookie `html[data-theme]`.
 
 Segurança
 - Cookies `HttpOnly`, `SameSite=Lax`, `Secure` em produção.
 - Senha do cookie (`WORKOS_COOKIE_PASSWORD`) ≥ 32 caracteres.
 
 Validação
-- `npm install @workos-inc/authkit-remix`
-- `npm run dev` e fluxo: `/` → botão “Entrar com WorkOS” → Hosted Sign-in → `/callback` → `/home`.
+- `npm install`
+- `npm run dev`
+- Fluxo: `/` → “Entrar com WorkOS” → Hosted Sign-in → `/workos/callback` → `/home`.
+- Se `signInUrl` indisponível, verificar env vars e dashboard WorkOS.
 
 Incrementos futuros
 - Seleção de organização, roles/permissions, profile sync.
-

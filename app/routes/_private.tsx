@@ -1,10 +1,10 @@
-import { Outlet, useLoaderData, type LoaderFunctionArgs } from 'react-router';
-import { json } from '~/utils/responses';
-import { requireUser } from '~/services/authService.server';
-import { getThemeFromCookie } from '~/utils/theme';
-import { Header } from '~/components/Header';
-import { Sidebar } from '~/components/Sidebar';
-import type { User, DaisyTheme } from '~/types';
+import { Outlet, useLoaderData, type LoaderFunctionArgs } from "react-router";
+import { json, redirect } from "~/utils/responses";
+import { getThemeFromCookie } from "~/utils/theme";
+import { Header } from "~/components/Header";
+import { Sidebar } from "~/components/Sidebar";
+import type { User, DaisyTheme } from "~/types";
+import { authkitLoader } from "@workos-inc/authkit-remix";
 
 type LoaderData = {
   user: User;
@@ -16,10 +16,15 @@ type LoaderData = {
  * Requires authentication and provides layout structure
  * Follows Remix best practices: loader for data fetching, nested routes
  */
-export async function loader({ request }: LoaderFunctionArgs) {
-  const user = await requireUser(request);
-  const theme = getThemeFromCookie(request) || 'light';
-
+export async function loader(args: LoaderFunctionArgs) {
+  const data = (await authkitLoader(args as any)) as any;
+  const user = data?.user as User | null;
+  const signInUrl = data?.signInUrl as string | undefined;
+  if (!user) {
+    if (signInUrl) return redirect(signInUrl);
+    return redirect("/");
+  }
+  const theme = getThemeFromCookie(args.request) || "light";
   return json<LoaderData>({ user, theme });
 }
 
