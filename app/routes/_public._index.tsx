@@ -2,6 +2,7 @@ import {
   Form,
   useActionData,
   useNavigation,
+  useFetcher,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "react-router";
@@ -53,6 +54,10 @@ export default function LandingPage() {
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
+  const workos = useFetcher<any>();
+  if (workos.state === "idle" && !workos.data) {
+    workos.load("/auth/info");
+  }
 
   return (
     <div className="min-h-screen">
@@ -119,6 +124,17 @@ export default function LandingPage() {
                     )}
                   </button>
                 </Form>
+                <div className="divider">ou</div>
+                <a
+                  href={workos.data?.signInUrl || "#"}
+                  className="btn btn-secondary w-full"
+                  aria-disabled={!workos.data?.signInUrl}
+                  onClick={(e) => {
+                    if (!workos.data?.signInUrl) e.preventDefault();
+                  }}
+                >
+                  Entrar com WorkOS
+                </a>
                 <p className="text-sm text-base-content/60 text-center mt-4">
                   Demo: Use qualquer email e senha
                 </p>
