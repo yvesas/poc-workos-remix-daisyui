@@ -169,13 +169,11 @@ export default function Perfil() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold">Perfil</h1>
-        <p className="text-base-content/60 mt-1">
-          Gerencie suas informações pessoais
-        </p>
+        <h1 className="text-3xl font-bold">Settings</h1>
+        <p className="text-base-content/60 mt-1">Profile Settings</p>
       </div>
 
       {/* Unsaved Changes Indicator - Powered by Zustand */}
@@ -199,9 +197,9 @@ export default function Perfil() {
       )}
 
       {/* Profile Information Card */}
-      <div className="card bg-base-100 shadow-xl">
+      <div className="card bg-base-100 shadow-xl rounded-2xl">
         <div className="card-body">
-          <h2 className="card-title">Informações Pessoais</h2>
+          <h2 className="card-title">Profile Settings</h2>
 
           <Form
             method="post"
@@ -210,70 +208,45 @@ export default function Perfil() {
           >
             <input type="hidden" name="intent" value="updateProfile" />
 
-            {/* Avatar Upload */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-semibold">Foto de Perfil</span>
-              </label>
-              <div className="flex items-center gap-6">
-                <div className="avatar placeholder">
-                  <div className="w-24 h-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                    {previewUrl ? (
-                      <img src={previewUrl} alt="Avatar preview" />
-                    ) : (
-                      <div className="bg-primary text-primary-content text-3xl">
-                        <span>
-                          {user.firstName[0]}
-                          {user.lastName[0]}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <input
-                    type="file"
-                    name="avatar"
-                    accept="image/*"
-                    className="file-input file-input-bordered file-input-primary w-full max-w-xs"
-                    onChange={handleFileChange}
-                  />
-                  <p className="text-sm text-base-content/60 mt-2">
-                    PNG, JPG ou GIF (max. 2MB)
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* First Name - with Zustand optimistic update */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Nome</span>
-                </label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={user.firstName}
-                  onChange={(e) => updateField("firstName", e.target.value)}
-                  className="input input-bordered"
-                  required
-                />
+                <label className="label"><span className="label-text">Name</span></label>
+                <input type="text" name="firstName" value={user.firstName} onChange={(e) => updateField('firstName', e.target.value)} className="input input-bordered" required />
               </div>
-
-              {/* Last Name - with Zustand optimistic update */}
               <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Sobrenome</span>
-                </label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={user.lastName}
-                  onChange={(e) => updateField("lastName", e.target.value)}
-                  className="input input-bordered"
-                  required
-                />
+                <label className="label"><span className="label-text">Email Id</span></label>
+                <input type="email" name="email" value={user.email} onChange={(e) => updateField('email', e.target.value)} className="input input-bordered" required />
+              </div>
+              <div className="form-control">
+                <label className="label"><span className="label-text">Title</span></label>
+                <input type="text" name="title" className="input input-bordered" />
+              </div>
+              <div className="form-control">
+                <label className="label"><span className="label-text">Place</span></label>
+                <input type="text" name="place" className="input input-bordered" />
+              </div>
+              <div className="form-control md:col-span-2">
+                <label className="label"><span className="label-text">About</span></label>
+                <textarea name="about" className="textarea textarea-bordered" rows={4}></textarea>
+              </div>
+              <div className="form-control">
+                <label className="label"><span className="label-text">Language</span></label>
+                <select name="language" className="select select-bordered">
+                  <option>English</option>
+                  <option>Português</option>
+                </select>
+              </div>
+              <div className="form-control">
+                <label className="label"><span className="label-text">Timezone</span></label>
+                <input type="text" name="timezone" className="input input-bordered" />
+              </div>
+              <div className="form-control">
+                <label className="label"><span className="label-text">Phone</span></label>
+                <input type="tel" name="phone" value={user.phone || ''} onChange={(e) => updateField('phone', e.target.value)} className="input input-bordered" />
+              </div>
+              <div className="form-control">
+                <label className="label"><span className="label-text">Sync Data</span></label>
+                <input type="checkbox" name="sync" className="toggle toggle-primary" />
               </div>
             </div>
 
@@ -321,19 +294,8 @@ export default function Perfil() {
             )}
 
             <div className="card-actions justify-end">
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={isProfileSubmitting}
-              >
-                {isProfileSubmitting ? (
-                  <>
-                    <span className="loading loading-spinner"></span>
-                    Salvando...
-                  </>
-                ) : (
-                  "Salvar Alterações"
-                )}
+              <button type="submit" className="btn btn-primary" disabled={isProfileSubmitting}>
+                {isProfileSubmitting ? (<><span className="loading loading-spinner"></span> Atualizando...</>) : ('Update')}
               </button>
             </div>
           </Form>
