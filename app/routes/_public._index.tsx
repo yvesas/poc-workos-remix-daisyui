@@ -6,6 +6,7 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "react-router";
+import { useEffect } from "react";
 import { json, redirect } from "~/utils/responses";
 import { Logo } from "~/components/Logo";
 import {
@@ -55,9 +56,11 @@ export default function LandingPage() {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
   const workos = useFetcher<any>();
-  if (workos.state === "idle" && !workos.data) {
-    workos.load("/auth/info");
-  }
+  useEffect(() => {
+    if (workos.state === "idle" && !workos.data) {
+      workos.load("/auth/info");
+    }
+  }, [workos.state]);
 
   return (
     <div className="min-h-screen">
@@ -127,7 +130,7 @@ export default function LandingPage() {
                 <div className="divider">ou</div>
                 <a
                   href={workos.data?.signInUrl || "#"}
-                  className={`btn btn-secondary w-full ${!workos.data?.signInUrl ? 'btn-disabled' : ''}`}
+                  className={`btn btn-secondary w-full ${!workos.data?.signInUrl ? "btn-disabled" : ""}`}
                   aria-disabled={!workos.data?.signInUrl}
                   onClick={(e) => {
                     if (!workos.data?.signInUrl) e.preventDefault();
@@ -138,8 +141,9 @@ export default function LandingPage() {
                 {!workos.data?.signInUrl && (
                   <div className="alert alert-warning mt-3">
                     <span>
-                      WorkOS não configurado. Defina WORKOS_CLIENT_ID, WORKOS_API_KEY,
-                      WORKOS_REDIRECT_URI e WORKOS_COOKIE_PASSWORD.
+                      WorkOS não configurado. Defina WORKOS_CLIENT_ID,
+                      WORKOS_API_KEY, WORKOS_REDIRECT_URI e
+                      WORKOS_COOKIE_PASSWORD.
                     </span>
                   </div>
                 )}
