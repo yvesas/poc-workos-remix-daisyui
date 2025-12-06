@@ -2,9 +2,11 @@ import { type LoaderFunctionArgs } from "react-router";
 import { json } from "~/utils/responses";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const apiKey = process.env.WORKOS_API_KEY;
-  const clientId = process.env.WORKOS_CLIENT_ID;
-  const redirectUri = process.env.WORKOS_REDIRECT_URI;
+  const apiKey = process.env.WORKOS_API_KEY || import.meta.env.WORKOS_API_KEY;
+  const clientId =
+    process.env.WORKOS_CLIENT_ID || import.meta.env.WORKOS_CLIENT_ID;
+  const redirectUri =
+    process.env.WORKOS_REDIRECT_URI || import.meta.env.WORKOS_REDIRECT_URI;
 
   if (!apiKey || !clientId || !redirectUri) {
     return json(
@@ -20,6 +22,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  return json({ message: "WorkOS configurado. Integrar provider e org domains." });
+  return json({
+    message: "WorkOS configurado. Integrar provider e org domains.",
+  });
 }
-
