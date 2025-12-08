@@ -14,10 +14,13 @@ export async function loader({
   request,
 }: LoaderFunctionArgs): Promise<Response> {
   // Fetch from BFF API
-  const response = await fetch(new URL("/api/creatives", request.url));
-  const data = await response.json();
-
-  return json<LoaderData>(data);
+  try {
+    const response = await fetch("/api/creatives");
+    const data = await response.json();
+    return json<LoaderData>(data);
+  } catch (_) {
+    return json<LoaderData>({ creatives: [] }, { status: 200 });
+  }
 }
 
 export default function Home() {

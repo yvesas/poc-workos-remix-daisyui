@@ -58,9 +58,19 @@ export default function LandingPage() {
   const workos = useFetcher<any>();
   useEffect(() => {
     if (workos.state === "idle" && !workos.data) {
-      workos.load("/auth/info");
+      try {
+        workos.load("/auth/info");
+      } catch (e) {
+        console.error("[workos] falha ao carregar /auth/info", e);
+      }
     }
   }, [workos.state]);
+
+  useEffect(() => {
+    if (workos.state === "idle" && workos.data && !workos.data?.signInUrl) {
+      console.error("[workos] signInUrl indisponível", workos.data);
+    }
+  }, [workos.state, workos.data]);
 
   return (
     <div className="min-h-screen">
@@ -129,16 +139,15 @@ export default function LandingPage() {
                 </Form>
                 <div className="divider">ou</div>
                 <a
-                  href={workos.data?.signInUrl || "#"}
-                  className={`btn btn-secondary w-full ${!workos.data?.signInUrl ? "btn-disabled" : ""}`}
-                  aria-disabled={!workos.data?.signInUrl}
-                  onClick={(e) => {
-                    if (!workos.data?.signInUrl) e.preventDefault();
+                  href="/auth/login"
+                  className={`btn btn-secondary w-full`}
+                  onClick={() => {
+                    console.error("[workos] tentativa de login via Hosted Sign-in");
                   }}
                 >
                   Entrar com WorkOS
                 </a>
-                {!workos.data?.signInUrl && (
+                {workos.state === "idle" && workos.data && !workos.data?.signInUrl && (
                   <div className="alert alert-warning mt-3">
                     <span>
                       WorkOS não configurado. Defina WORKOS_CLIENT_ID,
