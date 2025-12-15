@@ -1,46 +1,45 @@
-import { createCookieSessionStorage } from 'react-router';
 import { redirect } from '~/utils/responses';
 import type { User } from '~/types';
 
-// Session configuration
-const sessionSecret = process.env.SESSION_SECRET || 'default-secret-change-in-production';
-
-const { getSession, commitSession, destroySession } = createCookieSessionStorage({
-  cookie: {
-    name: '__session',
-    httpOnly: true,
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-    path: '/',
-    sameSite: 'lax',
-    secrets: [sessionSecret],
-    secure: process.env.NODE_ENV === 'production',
-  },
-});
-
-export { getSession, commitSession, destroySession };
-
-// Get user from session
+/**
+ * Get authenticated user from WorkOS session
+ * Returns null if user is not authenticated
+ * 
+ * Note: This function is a simplified version that returns user data
+ * extracted from the WorkOS session. For route loaders/actions,
+ * use authkitLoader directly.
+ */
 export async function getUserFromSession(request: Request): Promise<User | null> {
-  const session = await getSession(request.headers.get('Cookie'));
-  const userId = session.get('userId');
-  
-  if (!userId) {
+  try {
+    // Import authkitLoader dynamically to avoid issues
+    const { authkitLoader } = await import('@workos-inc/authkit-remix');
+    const data = (await authkitLoader({ request } as any)) as any;
+    const user = data?.user;
+    
+    if (!user) {
+      return null;
+    }
+
+    // Map WorkOS user to our User type
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      phone: '', // WorkOS doesn't provide phone by default
+      avatarUrl: user.profilePictureUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.firstName}`,
+    };
+  } catch (error) {
+    // If there's any error getting the user, return null
+    console.error('[WorkOS] Error getting user:', error);
     return null;
   }
-
-  // In a real app, fetch user from database
-  // For now, return mock user
-  return {
-    id: userId,
-    email: 'user@example.com',
-    firstName: 'John',
-    lastName: 'Doe',
-    phone: '(11) 99999-9999',
-    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John',
-  };
 }
 
-// Require authenticated user or redirect to login
+/**
+ * Require authenticated user or redirect to login
+ * Throws redirect if user is not authenticated
+ */
 export async function requireUser(request: Request): Promise<User> {
   const user = await getUserFromSession(request);
   
@@ -51,25 +50,10 @@ export async function requireUser(request: Request): Promise<User> {
   return user;
 }
 
-// Create user session (mock login)
-export async function createUserSession(userId: string, redirectTo: string) {
-  const session = await getSession();
-  session.set('userId', userId);
-  
-  return redirect(redirectTo, {
-    headers: {
-      'Set-Cookie': await commitSession(session),
-    },
-  });
-}
-
-// Logout user
+/**
+ * Logout user and redirect to home
+ * WorkOS handles session destruction
+ */
 export async function logout(request: Request) {
-  const session = await getSession(request.headers.get('Cookie'));
-  
-  return redirect('/', {
-    headers: {
-      'Set-Cookie': await destroySession(session),
-    },
-  });
+  return redirect('/');
 }

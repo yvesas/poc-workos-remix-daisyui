@@ -1,22 +1,13 @@
 import {
-  Form,
-  useActionData,
-  useNavigation,
   useFetcher,
-  type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "react-router";
 import { useEffect } from "react";
-import { json, redirect } from "~/utils/responses";
+import { redirect } from "~/utils/responses";
 import { Logo } from "~/components/Logo";
 import {
   getUserFromSession,
-  createUserSession,
 } from "~/services/authService.server";
-
-type ActionData = {
-  error?: string;
-};
 
 /**
  * Landing page - public page showcasing the POC
@@ -34,27 +25,7 @@ export async function loader({
   return null;
 }
 
-export async function action({
-  request,
-}: ActionFunctionArgs): Promise<Response> {
-  const formData = await request.formData();
-  const email = formData.get("email");
-  const password = formData.get("password");
-
-  if (!email || !password) {
-    return json<ActionData>(
-      { error: "Email e senha são obrigatórios" },
-      { status: 400 }
-    );
-  }
-  // Mock login direto: cria sessão e redireciona para /home
-  return createUserSession("user-123", "/home");
-}
-
 export default function LandingPage() {
-  const actionData = useActionData<ActionData>();
-  const navigation = useNavigation();
-  const isSubmitting = navigation.state === "submitting";
   const workos = useFetcher<any>();
   useEffect(() => {
     if (workos.state === "idle" && !workos.data) {
@@ -92,63 +63,51 @@ export default function LandingPage() {
               empresarial.
             </p>
 
-            {/* Login Form */}
+            {/* Login Card */}
             <div className="card bg-base-100 shadow-2xl max-w-md mx-auto">
               <div className="card-body">
                 <h2 className="card-title justify-center mb-4">
-                  Acesso Rápido
+                  Entrar no Sistema
                 </h2>
-                <Form method="post" className="space-y-4">
-                  <div className="form-control">
-                    <input
-                      type="email"
-                      name="email"
-                      placeholder="seu@email.com"
-                      className="input input-bordered"
-                      required
-                    />
-                  </div>
-                  <div className="form-control">
-                    <input
-                      type="password"
-                      name="password"
-                      placeholder="Senha"
-                      className="input input-bordered"
-                      required
-                    />
-                  </div>
-                  {actionData?.error && (
-                    <div className="alert alert-error">
-                      <span>{actionData.error}</span>
-                    </div>
-                  )}
-                  <button
-                    type="submit"
-                    className="btn btn-primary w-full"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <span className="loading loading-spinner"></span>
-                        Entrando...
-                      </>
-                    ) : (
-                      "Entrar"
-                    )}
-                  </button>
-                </Form>
-                <div className="divider">ou</div>
+                <p className="text-sm text-base-content/60 text-center mb-4">
+                  Autenticação segura com WorkOS
+                </p>
                 <a
                   href="/auth/login"
-                  className={`btn btn-secondary w-full`}
+                  className="btn btn-primary w-full"
                   onClick={() => {
-                    console.error("[workos] tentativa de login via Hosted Sign-in");
+                    console.log("[workos] Iniciando login via Hosted Sign-in");
                   }}
                 >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
                   Entrar com WorkOS
                 </a>
                 {workos.state === "idle" && workos.data && !workos.data?.signInUrl && (
                   <div className="alert alert-warning mt-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="stroke-current shrink-0 h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
                     <span>
                       WorkOS não configurado. Defina WORKOS_CLIENT_ID,
                       WORKOS_API_KEY, WORKOS_REDIRECT_URI e
@@ -156,9 +115,6 @@ export default function LandingPage() {
                     </span>
                   </div>
                 )}
-                <p className="text-sm text-base-content/60 text-center mt-4">
-                  Demo: Use qualquer email e senha
-                </p>
               </div>
             </div>
           </div>
@@ -213,11 +169,10 @@ export default function LandingPage() {
                 <h3 className="card-title">WorkOS</h3>
                 <p className="text-base-content/70">
                   Plataforma de autenticação empresarial com SSO, SAML, e
-                  gerenciamento de usuários. Integração planejada para
-                  autenticação robusta.
+                  gerenciamento de usuários integrada nesta aplicação.
                 </p>
                 <div className="card-actions justify-end mt-4">
-                  <div className="badge badge-accent">Em Breve</div>
+                  <div className="badge badge-success">Ativo</div>
                   <div className="badge badge-outline">SSO</div>
                 </div>
               </div>
