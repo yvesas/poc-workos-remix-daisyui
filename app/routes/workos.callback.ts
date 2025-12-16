@@ -1,6 +1,17 @@
 import type { LoaderFunctionArgs } from "react-router";
-import { authLoader } from "@workos-inc/authkit-remix";
+import { redirect } from "react-router";
+import { authkitLoader } from "@workos-inc/authkit-remix";
 
-export async function loader(_args: LoaderFunctionArgs) {
-  return authLoader({ returnPathname: "/home" });
+/**
+ * WorkOS Callback Route
+ * Handles the OAuth callback from WorkOS after user authentication
+ */
+export async function loader(args: LoaderFunctionArgs) {
+  // authkitLoader processes the callback and sets the session
+  // Then returns user data or redirects
+  const result = await authkitLoader(args as any);
+  
+  // If we got user data back, redirect to home
+  // authkitLoader handles the session creation automatically
+  return redirect("/home");
 }

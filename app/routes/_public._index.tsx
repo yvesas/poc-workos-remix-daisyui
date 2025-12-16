@@ -73,11 +73,8 @@ export default function LandingPage() {
                   Autenticação segura com WorkOS
                 </p>
                 <a
-                  href="/auth/login"
+                  href="https://api.workos.com/user_management/authorize?client_id=client_01KBFT2W9VVG77SRDMTT1WJM86&redirect_uri=http://localhost:5173/workos/callback&response_type=code&provider=authkit"
                   className="btn btn-primary w-full"
-                  onClick={() => {
-                    console.log("[workos] Iniciando login via Hosted Sign-in");
-                  }}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -91,7 +88,7 @@ export default function LandingPage() {
                       clipRule="evenodd"
                     />
                   </svg>
-                  Entrar com WorkOS
+                  Entrar com WorkOS (Link Direto)
                 </a>
                 {workos.state === "idle" && workos.data && !workos.data?.signInUrl && (
                   <div className="alert alert-warning mt-3">

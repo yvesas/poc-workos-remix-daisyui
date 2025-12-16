@@ -1,23 +1,36 @@
-import { json, redirect } from "~/utils/responses";
 import type { LoaderFunctionArgs } from "react-router";
-import { authkitLoader } from "@workos-inc/authkit-remix";
+import { redirect } from "react-router";
 
-export async function loader(args: LoaderFunctionArgs) {
-  const data = (await authkitLoader(args as any)) as any;
-  const signInUrl = data?.signInUrl as string | undefined;
-  if (signInUrl) return redirect(signInUrl);
-  console.error("[workos] auth.login signInUrl indisponível", {
-    env: {
-      WORKOS_CLIENT_ID: !!process.env.WORKOS_CLIENT_ID,
-      WORKOS_API_KEY: !!process.env.WORKOS_API_KEY,
-      WORKOS_REDIRECT_URI: !!process.env.WORKOS_REDIRECT_URI,
-      WORKOS_COOKIE_PASSWORD: !!process.env.WORKOS_COOKIE_PASSWORD,
-      SESSION_SECRET: !!process.env.SESSION_SECRET,
-    },
-    dataKeys: Object.keys(data || {}).sort(),
+/**
+ * WorkOS Auth Login Route
+ * Redirects user to WorkOS Hosted Sign-in page
+ */
+export async function loader({ request }: LoaderFunctionArgs) {
+  console.log("[auth.login] Iniciando...");
+  
+  const clientId = process.env.WORKOS_CLIENT_ID;
+  const redirectUri = process.env.WORKOS_REDIRECT_URI;
+
+  console.log("[auth.login] Credenciais:", {
+    clientId: clientId ? `${clientId.substring(0, 10)}...` : "MISSING",
+    redirectUri,
   });
-  return json(
-    { error: "WorkOS não configurado: signInUrl indisponível" },
-    { status: 501 }
-  );
+
+  if (!clientId || !redirectUri) {
+    console.error("[auth.login] ERRO: Variáveis de ambiente faltando!");
+    throw new Error("WorkOS not configured: missing CLIENT_ID or REDIRECT_URI");
+  }
+
+  // Construct WorkOS authorization URL
+  const authorizationUrl = new URL("https://api.workos.com/user_management/authorize");
+  authorizationUrl.searchParams.set("client_id", clientId);
+  authorizationUrl.searchParams.set("redirect_uri", redirectUri);
+  authorizationUrl.searchParams.set("response_type", "code");
+  authorizationUrl.searchParams.set("provider", "authkit");
+
+  const finalUrl = authorizationUrl.toString();
+  console.log("[auth.login] Redirecionando para:", finalUrl);
+
+  // Redirect to WorkOS
+  return redirect(finalUrl);
 }
